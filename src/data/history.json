@@ -1,0 +1,23 @@
+[
+ {
+  "rodada": 33,
+  "at": "2026-10-30T23:34:56+00:00",
+  "sample": false,
+  "title": {
+   "Flamengo": 0.8314,
+   "Palmeiras": 0.1686
+  },
+  "rel": {
+   "Botafogo": 0.09865,
+   "Coritiba": 0.1602,
+   "Vasco da Gama": 0.0847,
+   "Vitória": 0.1012,
+   "Grêmio": 0.3699,
+   "Mirassol": 0.16835,
+   "Internacional": 0.43735,
+   "Corinthians": 0.588,
+   "Remo": 0.9913,
+   "Chapecoense": 1.0
+  }
+ }
+]

@@ -1,0 +1,13 @@
+---
+interface Props { src: string | null | undefined; size?: number }
+const { src, size = 24 } = Astro.props;
+---
+
+{src && (
+  <img class="crest" src={src} alt="" width={size} height={size} loading="lazy" decoding="async"
+       onerror="this.style.display='none'" />
+)}
+
+<style>
+  .crest { flex: none; object-fit: contain; }
+</style>

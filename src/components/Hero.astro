@@ -1,0 +1,122 @@
+---
+import type { Snapshot } from '../lib/types';
+import { longDateTime, pct } from '../lib/format';
+import Crest from './Crest.astro';
+
+interface Props { snap: Snapshot }
+const { snap } = Astro.props;
+
+const byTitle = [...snap.teams].sort((a, b) => b.p_title - a.p_title);
+const [fav, vice] = byTitle;
+const atRisk = snap.teams.filter((t) => t.p_rel > 0.5);
+const relZoneStart = snap.rules.teams - snap.rules.relegated + 1;
+const gap = fav.pts - (snap.teams.find((t) => t.id === vice.id)?.pts ?? 0);
+const decided = snap.remaining === 0;
+---
+
+<header class="hero">
+  <div class="hero-text">
+    <p class="eyebrow">Série A {snap.season} · após a {snap.rodada}ª rodada</p>
+    <h1>Brasileirão: título e rebaixamento</h1>
+    <p class="lead">
+      {decided ? (
+        <>Campeonato encerrado. <strong>{fav.short}</strong> é o campeão.</>
+      ) : (
+        <>
+          <strong>{fav.short}</strong> tem <strong>{pct(fav.p_title)}</strong> de chance de título,
+          {gap >= 0 ? ` ${gap} ponto${Math.abs(gap) === 1 ? '' : 's'} à frente de ` : ` ${-gap} pontos atrás de `}
+          <strong>{vice.short}</strong> ({pct(vice.p_title)}). {atRisk.length} clube{atRisk.length === 1 ? '' : 's'}
+          {atRisk.length === 1 ? ' tem' : ' têm'} mais de 50% de risco de queda.
+        </>
+      )}
+    </p>
+  </div>
+
+  <dl class="kpis">
+    <div class="kpi">
+      <dt>Favorito ao título</dt>
+      <dd><span class="big">{pct(fav.p_title)}</span><span class="who team"><Crest src={fav.crest} />{fav.short}</span></dd>
+    </div>
+    <div class="kpi">
+      <dt>Vice na disputa</dt>
+      <dd><span class="big">{pct(vice.p_title)}</span><span class="who team"><Crest src={vice.crest} />{vice.short}</span></dd>
+    </div>
+    <div class="kpi">
+      <dt>Risco de queda acima de 50%</dt>
+      <dd><span class="big">{atRisk.length}</span><span class="who">clubes · caem do {relZoneStart}º ao {snap.rules.teams}º</span></dd>
+    </div>
+    <div class="kpi">
+      <dt>Jogos restantes</dt>
+      <dd><span class="big">{snap.remaining}</span><span class="who">{snap.played} disputados</span></dd>
+    </div>
+  </dl>
+
+  <p class="meta">
+    Atualizado em <time datetime={snap.generated_at}>{longDateTime(snap.generated_at)}</time>
+    · {snap.n_sims.toLocaleString('pt-BR')} simulações
+    <span class="refresh" id="refresh-banner" hidden>
+      · Há dados novos. <button type="button" id="refresh-btn">Recarregar</button>
+    </span>
+  </p>
+
+  {snap.sample && (
+    <p class="sample" role="note">
+      Dados de exemplo (times fictícios). Configure <code>FOOTBALL_DATA_TOKEN</code> e rode o workflow para usar o campeonato real.
+    </p>
+  )}
+</header>
+
+<script>
+  // Verifica periodicamente se um novo build foi publicado e oferece recarregar.
+  const CHECK_EVERY_MS = 5 * 60 * 1000;
+  const current = document.querySelector<HTMLMetaElement>('meta[name="generated-at"]')?.content;
+  const banner = document.getElementById('refresh-banner');
+
+  async function check(): Promise<void> {
+    try {
+      const res = await fetch('/version.json', { cache: 'no-store' });
+      if (!res.ok) return;
+      const { generated_at } = (await res.json()) as { generated_at: string };
+      if (current && generated_at !== current && banner) banner.hidden = false;
+    } catch {
+      /* offline: tenta de novo no próximo ciclo */
+    }
+  }
+
+  document.getElementById('refresh-btn')?.addEventListener('click', () => location.reload());
+  setInterval(check, CHECK_EVERY_MS);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') void check();
+  });
+</script>
+
+<style>
+  .hero { display: flex; flex-direction: column; gap: 18px; }
+  .eyebrow { margin: 0; color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  h1 { margin: 4px 0 8px; font: 400 clamp(1.8rem, 4vw, 2.6rem)/1.15 var(--font-display); }
+  .lead { margin: 0; max-width: 62ch; color: var(--muted); font-size: 1.02rem; }
+  .lead strong { color: var(--fg); font-weight: 600; }
+
+  .kpis {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: var(--gap);
+  }
+  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+  .kpi dt { color: var(--muted); font-size: 0.8rem; }
+  .kpi dd { margin: 6px 0 0; display: flex; flex-direction: column; }
+  .big { font: 400 2.1rem/1.1 var(--font-display); }
+  .who { color: var(--muted); font-size: 0.85rem; }
+  .who.team { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+
+  .meta { margin: 0; color: var(--muted); font-size: 0.82rem; }
+  .refresh button {
+    font: inherit; color: var(--accent); background: none; border: 0; padding: 0;
+    cursor: pointer; text-decoration: underline;
+  }
+  .sample {
+    margin: 0; padding: 10px 14px; border-radius: var(--radius);
+    background: var(--bad-soft); color: var(--fg); font-size: 0.88rem;
+  }
+</style>

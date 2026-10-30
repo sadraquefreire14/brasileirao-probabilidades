@@ -1,0 +1,53 @@
+---
+import type { NextMatch } from '../lib/types';
+import { pct, shortDateTime } from '../lib/format';
+import Crest from './Crest.astro';
+
+interface Props { matches: NextMatch[] }
+const { matches } = Astro.props;
+---
+
+<section class="card" aria-labelledby="next-title">
+  <h2 id="next-title">Próximos jogos</h2>
+  <p class="sub">Chance de vitória do mandante, empate e vitória do visitante segundo o modelo.</p>
+  {matches.length === 0 ? (
+    <p class="sub">Não há jogos pendentes.</p>
+  ) : (
+    <ol class="matches">
+      {matches.map((m) => (
+        <li>
+          <p class="when">
+            <time datetime={m.utc_date}>{shortDateTime(m.utc_date)}</time>
+            {m.matchday && <> · {m.matchday}ª rodada</>}
+            {m.status === 'POSTPONED' && <> · adiado</>}
+          </p>
+          <p class="teams">
+            <span class="side"><Crest src={m.home_crest} size={32} /><span>{m.home}</span></span>
+            <span class="x">×</span>
+            <span class="side away"><span>{m.away}</span><Crest src={m.away_crest} size={32} /></span>
+          </p>
+          <div class="split" role="img" aria-label={`${m.home} ${pct(m.p_home)}, empate ${pct(m.p_draw)}, ${m.away} ${pct(m.p_away)}`}>
+            <span class="h" style={`flex:${m.p_home}`}>{pct(m.p_home)}</span>
+            <span class="d" style={`flex:${m.p_draw}`}>{pct(m.p_draw)}</span>
+            <span class="a" style={`flex:${m.p_away}`}>{pct(m.p_away)}</span>
+          </div>
+        </li>
+      ))}
+    </ol>
+  )}
+</section>
+
+<style>
+  .matches { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .matches li { display: grid; gap: 4px; }
+  .when { margin: 0; color: var(--muted); font-size: 0.78rem; }
+  .teams { margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 500; line-height: 1.2; }
+  .side { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+  .side.away { justify-content: flex-end; text-align: right; }
+  .x { flex: none; color: var(--muted); }
+  .split { display: flex; height: 22px; border-radius: 4px; overflow: hidden; font-size: 0.72rem; }
+  .split span { display: grid; place-items: center; min-width: 36px; color: #fff; font-weight: 600; }
+  .split .h { background: var(--accent); }
+  .split .d { background: var(--bar-muted); color: var(--fg); }
+  .split .a { background: var(--accent-2); }
+</style>

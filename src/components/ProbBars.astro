@@ -1,0 +1,60 @@
+---
+import { pct } from '../lib/format';
+import Crest from './Crest.astro';
+
+interface Item { name: string; value: number; crest: string | null }
+interface Props {
+  id: string;
+  title: string;
+  subtitle: string;
+  items: Item[];
+  /** linha de referência (ex.: 0.5) */
+  reference?: number;
+  /** valores acima deste limite recebem a cor de alerta */
+  alertAbove?: number;
+  color?: string;
+}
+
+const { id, title, subtitle, items, reference, alertAbove, color = 'var(--accent)' } = Astro.props;
+const fill = (v: number) =>
+  alertAbove === undefined ? color : v > alertAbove ? 'var(--bad)' : 'var(--bar-muted)';
+---
+
+<section class="card" aria-labelledby={id}>
+  <h2 id={id}>{title}</h2>
+  <p class="sub">{subtitle}</p>
+  {items.length === 0 ? (
+    <p class="sub">Nenhum clube nesta faixa.</p>
+  ) : (
+    <ul class="bars" style={reference !== undefined ? `--ref:${reference}` : undefined}>
+      {items.map((it) => (
+        <li>
+          <span class="name"><Crest src={it.crest} size={20} /><span class="label">{it.name}</span></span>
+          <span class="track" class:list={[reference !== undefined && 'has-ref']}>
+            <span class="bar" style={`width:${(it.value * 100).toFixed(2)}%;background:${fill(it.value)}`}></span>
+          </span>
+          <span class="value">{pct(it.value)}</span>
+        </li>
+      ))}
+    </ul>
+  )}
+</section>
+
+<style>
+  .bars {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: minmax(80px, max-content) 1fr 3.6rem;
+    gap: 6px 10px; align-items: center; font-size: 0.85rem;
+  }
+  .bars li { display: contents; }
+  .name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .value { color: var(--muted); }
+  .track { position: relative; height: 16px; }
+  .bar { display: block; height: 100%; min-width: 2px; border-radius: 3px; }
+  .track.has-ref::after {
+    content: ''; position: absolute; top: -3px; bottom: -3px;
+    left: calc(var(--ref) * 100%);
+    border-left: 1px dashed var(--muted);
+  }
+</style>

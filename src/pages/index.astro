@@ -1,0 +1,62 @@
+---
+import Base from '../layouts/Base.astro';
+import Hero from '../components/Hero.astro';
+import TitleRace from '../components/TitleRace.astro';
+import ProbBars from '../components/ProbBars.astro';
+import StandingsTable from '../components/StandingsTable.astro';
+import PositionHeatmap from '../components/PositionHeatmap.astro';
+import NextMatches from '../components/NextMatches.astro';
+import Methodology from '../components/Methodology.astro';
+import { history, snapshot as snap } from '../lib/data';
+import { pct } from '../lib/format';
+
+const MIN_SHOWN = 0.001;
+const RISK_LIMIT = 0.5;
+
+const relegation = snap.teams
+  .filter((t) => t.p_rel >= MIN_SHOWN)
+  .sort((a, b) => b.p_rel - a.p_rel)
+  .map((t) => ({ name: t.short, value: t.p_rel, crest: t.crest }));
+
+const libertadores = snap.teams
+  .filter((t) => t.p_lib >= MIN_SHOWN)
+  .sort((a, b) => b.p_lib - a.p_lib)
+  .map((t) => ({ name: t.short, value: t.p_lib, crest: t.crest }));
+
+const leader = [...snap.teams].sort((a, b) => b.p_title - a.p_title)[0];
+const description = `Brasileirão ${snap.season} após a ${snap.rodada}ª rodada: ${leader.short} tem ${pct(leader.p_title)} de chance de título.`;
+---
+
+<Base title={`Brasileirão ${snap.season}: título e rebaixamento`} description={description} generatedAt={snap.generated_at}>
+  <main class="container">
+    <Hero snap={snap} />
+
+    <div class="grid">
+      <TitleRace snap={snap} history={history} />
+      <ProbBars
+        id="rel-title"
+        title="Risco de rebaixamento"
+        subtitle={`Clubes com risco a partir de 0,1%. Tracejado em ${pct(RISK_LIMIT)}.`}
+        items={relegation}
+        reference={RISK_LIMIT}
+        alertAbove={RISK_LIMIT}
+      />
+    </div>
+
+    <StandingsTable snap={snap} />
+
+    <div class="grid">
+      <ProbBars
+        id="lib-title"
+        title={`Vaga direta na Libertadores (top ${snap.rules.libertadores_direct})`}
+        subtitle="Vagas extras dependem da Copa do Brasil e não entram aqui."
+        items={libertadores}
+        color="var(--ok)"
+      />
+      <NextMatches matches={snap.next_matches} />
+    </div>
+
+    <PositionHeatmap snap={snap} />
+    <Methodology snap={snap} />
+  </main>
+</Base>

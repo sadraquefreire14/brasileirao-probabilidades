@@ -1,0 +1,106 @@
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --fg: #16181d;
+  --muted: #5c6370;
+  --line: #e3e6eb;
+  --accent: #1f6feb;
+  --accent-2: #8250df;
+  --ok: #1a7f37;
+  --bad: #cf222e;
+  --bad-soft: #fbe3e5;
+  --ok-soft: #dcf3e3;
+  --bar-muted: #c3c8d1;
+  --heat: 31 111 235; /* rgb para a escala do mapa de calor */
+  --radius: 10px;
+  --gap: clamp(12px, 2vw, 20px);
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Source Serif 4', Georgia, serif;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --fg: #e8eaee;
+    --muted: #9aa3b2;
+    --line: #2a2f3a;
+    --accent: #58a6ff;
+    --accent-2: #bc8cff;
+    --ok: #3fb950;
+    --bad: #f85149;
+    --bad-soft: #3b1d20;
+    --ok-soft: #12301d;
+    --bar-muted: #4a5160;
+    --heat: 88 166 255;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 var(--font);
+  font-variant-numeric: tabular-nums;
+}
+
+a { color: var(--accent); }
+
+.container {
+  width: min(1200px, 100% - 32px);
+  margin-inline: auto;
+  padding-block: 28px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+/* filhos de flex/grid encolhem abaixo do conteúdo; tabelas largas rolam dentro do card */
+.container > *, .grid > * { min-width: 0; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: var(--gap);
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: clamp(14px, 2.2vw, 22px);
+  min-width: 0;
+}
+
+.card > h2 {
+  margin: 0 0 2px;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.card > .sub {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.chart { width: 100%; height: auto; display: block; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 12px; font-family: var(--font); }
+.chart .label { fill: var(--fg); }
+.chart .grid-line { stroke: var(--line); }
+.chart .ref { stroke: var(--muted); stroke-dasharray: 4 3; }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* SVG escala com a largura: compensa a fonte em telas estreitas */
+@media (max-width: 600px) {
+  .chart text { font-size: 17px; }
+}

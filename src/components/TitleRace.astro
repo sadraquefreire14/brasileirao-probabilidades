@@ -1,0 +1,79 @@
+---
+import type { HistoryEntry, Snapshot } from '../lib/types';
+import { pct } from '../lib/format';
+
+interface Props { snap: Snapshot; history: HistoryEntry[]; maxSeries?: number }
+const { snap, history, maxSeries = 4 } = Astro.props;
+
+const W = 600, H = 300;
+const m = { t: 14, r: 190, b: 30, l: 48 };
+const CREST = 18;
+const colors = ['var(--accent)', 'var(--accent-2)', '#d4a72c', '#2da44e'];
+
+// Times com maior chance atual entram no gráfico
+const series = [...snap.teams]
+  .filter((t) => t.p_title > 0)
+  .sort((a, b) => b.p_title - a.p_title)
+  .slice(0, maxSeries)
+  .map((t, i) => ({
+    name: t.short,
+    crest: t.crest,
+    color: colors[i % colors.length],
+    points: history.map((h) => ({ x: h.rodada, y: h.title[t.short] ?? 0 })),
+  }));
+
+const rounds = history.map((h) => h.rodada);
+const xMin = Math.min(...rounds), xMax = Math.max(...rounds);
+const x = (r: number) => (xMax === xMin ? (m.l + W - m.r) / 2 : m.l + ((r - xMin) / (xMax - xMin)) * (W - m.l - m.r));
+const y = (p: number) => m.t + (1 - p) * (H - m.t - m.b);
+const yTicks = [0, 0.25, 0.5, 0.75, 1];
+const xTicks = rounds.length > 10 ? rounds.filter((_, i) => i % Math.ceil(rounds.length / 10) === 0) : rounds;
+
+// Rótulos finais sem sobreposição
+const ends = series
+  .map((s) => ({ name: s.name, crest: s.crest, color: s.color, p: s.points.at(-1)?.y ?? 0, yy: y(s.points.at(-1)?.y ?? 0) }))
+  .sort((a, b) => a.yy - b.yy);
+const LABEL_GAP = 21;
+for (let i = 1; i < ends.length; i++) if (ends[i].yy - ends[i - 1].yy < LABEL_GAP) ends[i].yy = ends[i - 1].yy + LABEL_GAP;
+
+const path = (pts: { x: number; y: number }[]) =>
+  pts.map((p, i) => `${i ? 'L' : 'M'}${x(p.x).toFixed(1)},${y(p.y).toFixed(1)}`).join('');
+---
+
+<section class="card" aria-labelledby="race-title">
+  <h2 id="race-title">Corrida pelo título</h2>
+  <p class="sub">Chance de título ao fim de cada rodada simulada.</p>
+  {history.length < 2 ? (
+    <p class="sub">O gráfico aparece a partir da segunda rodada registrada.</p>
+  ) : (
+    <svg class="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Evolução da chance de título por rodada">
+      {yTicks.map((t) => (
+        <g>
+          <line class="grid-line" x1={m.l} x2={W - m.r} y1={y(t)} y2={y(t)} />
+          <text x={m.l - 8} y={y(t)} dy="0.35em" text-anchor="end">{Math.round(t * 100)}%</text>
+        </g>
+      ))}
+      {xTicks.map((r) => (
+        <text x={x(r)} y={H - 8} text-anchor="middle">{r}ª</text>
+      ))}
+      {series.map((s) => (
+        <g>
+          <path d={path(s.points)} fill="none" stroke={s.color} stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+          {s.points.map((p) => (
+            <circle cx={x(p.x)} cy={y(p.y)} r="3.5" fill={s.color}>
+              <title>{`${s.name} · ${p.x}ª rodada: ${pct(p.y)}`}</title>
+            </circle>
+          ))}
+        </g>
+      ))}
+      {ends.map((e) => (
+        <g>
+          {e.crest && <image href={e.crest} x={W - m.r + 8} y={e.yy - CREST / 2} width={CREST} height={CREST} />}
+          <text class="label" x={W - m.r + (e.crest ? 8 + CREST + 4 : 10)} y={e.yy} dy="0.35em" style={`fill:${e.color};font-weight:600`}>
+            {e.name} {pct(e.p)}
+          </text>
+        </g>
+      ))}
+    </svg>
+  )}
+</section>

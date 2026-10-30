@@ -1,0 +1,151 @@
+---
+import type { Snapshot } from '../lib/types';
+import { pct, signed, zone } from '../lib/format';
+import Crest from './Crest.astro';
+
+interface Props { snap: Snapshot }
+const { snap } = Astro.props;
+const { libertadores_direct: lib, relegated: rel, teams: n } = snap.rules;
+
+const columns = [
+  { key: 'pos', label: '#', type: 'num' },
+  { key: 'short', label: 'Clube', type: 'text' },
+  { key: 'pts', label: 'Pts', type: 'num' },
+  { key: 'j', label: 'J', type: 'num', opt: true },
+  { key: 'v', label: 'V', type: 'num', opt: true },
+  { key: 'e', label: 'E', type: 'num', opt: true },
+  { key: 'd', label: 'D', type: 'num', opt: true },
+  { key: 'sg', label: 'SG', type: 'num', opt: true },
+  { key: 'form', label: 'Últimos 5', type: 'none', opt: true },
+  { key: 'exp_pts', label: 'Pts proj.', type: 'num', opt: true },
+  { key: 'p_title', label: 'Título', type: 'num' },
+  { key: 'p_lib', label: `Top ${lib}`, type: 'num' },
+  { key: 'p_rel', label: 'Queda', type: 'num' },
+] as const;
+---
+
+<section class="card" aria-labelledby="table-title">
+  <h2 id="table-title">Classificação e probabilidades</h2>
+  <p class="sub">
+    Tabela completa após a {snap.rodada}ª rodada. Clique no cabeçalho para ordenar.
+    “Pts proj.” é a média de pontos ao fim do campeonato nas simulações.
+  </p>
+  <div class="table-wrap">
+    <table class="standings" id="standings">
+      <thead>
+        <tr>
+          {columns.map((c) => (
+            <th scope="col" class:list={[c.type === 'text' && 'l', 'opt' in c && c.opt && 'opt']}
+                aria-sort={c.key === 'pos' ? 'ascending' : undefined}>
+              {c.type === 'none' ? c.label : (
+                <button type="button" data-key={c.key} data-type={c.type}>{c.label}</button>
+              )}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {snap.teams.map((t) => (
+          <tr class:list={[zone(t.pos, lib, rel, n)]}
+              data-pos={t.pos} data-short={t.short} data-pts={t.pts} data-j={t.j} data-v={t.v}
+              data-e={t.e} data-d={t.d} data-sg={t.sg} data-exp_pts={t.exp_pts}
+              data-p_title={t.p_title} data-p_lib={t.p_lib} data-p_rel={t.p_rel}>
+            <td>{t.pos}</td>
+            <th scope="row" class="l">
+              <span class="team"><Crest src={t.crest} /><span>{t.short}</span></span>
+            </th>
+            <td class="strong">{t.pts}</td>
+            <td class="opt">{t.j}</td>
+            <td class="opt">{t.v}</td>
+            <td class="opt">{t.e}</td>
+            <td class="opt">{t.d}</td>
+            <td class="opt">{signed(t.sg)}</td>
+            <td class="opt form">
+              {t.form.map((r) => <span class:list={['dot', r]} title={r === 'V' ? 'Vitória' : r === 'E' ? 'Empate' : 'Derrota'}>{r}</span>)}
+            </td>
+            <td class="opt">{t.exp_pts.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}</td>
+            <td class:list={[t.p_title >= 0.1 && 'good']}>{pct(t.p_title)}</td>
+            <td>{pct(t.p_lib)}</td>
+            <td class:list={[t.p_rel > 0.5 && 'bad']}>{pct(t.p_rel)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <p class="legend">
+    <span class="lg lib">Libertadores direta (1º–{lib}º)</span>
+    <span class="lg rel">Rebaixamento ({n - rel + 1}º–{n}º)</span>
+  </p>
+</section>
+
+<script>
+  // Ordenação no cliente: sem dependências, preserva as linhas renderizadas.
+  const table = document.getElementById('standings') as HTMLTableElement | null;
+  if (table) {
+    const tbody = table.tBodies[0];
+    let state = { key: 'pos', dir: 1 };
+
+    table.querySelectorAll<HTMLButtonElement>('thead button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.key!;
+        const isNum = btn.dataset.type === 'num';
+        // números grandes primeiro por padrão, exceto posição e nome
+        const defaultDir = key === 'pos' || !isNum ? 1 : -1;
+        state = { key, dir: state.key === key ? -state.dir : defaultDir };
+
+        const rows = Array.from(tbody.rows);
+        rows.sort((a, b) => {
+          const va = a.dataset[key] ?? '', vb = b.dataset[key] ?? '';
+          const cmp = isNum ? Number(va) - Number(vb) : va.localeCompare(vb, 'pt-BR');
+          return cmp * state.dir || Number(a.dataset.pos) - Number(b.dataset.pos);
+        });
+        tbody.append(...rows);
+
+        table.querySelectorAll('thead th').forEach((th) => th.removeAttribute('aria-sort'));
+        btn.parentElement?.setAttribute('aria-sort', state.dir === 1 ? 'ascending' : 'descending');
+      });
+    });
+  }
+</script>
+
+<style>
+  .table-wrap { overflow-x: auto; }
+  .standings { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  .standings th, .standings td {
+    padding: 8px 10px; text-align: right; white-space: nowrap;
+    border-bottom: 1px solid var(--line);
+  }
+  .standings thead th { color: var(--muted); font-size: 0.78rem; font-weight: 500; }
+  .standings thead button {
+    font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
+  }
+  .standings thead button:hover, .standings thead button:focus-visible { color: var(--fg); }
+  .standings th[aria-sort] button { color: var(--fg); font-weight: 600; }
+  .standings th[aria-sort='ascending'] button::after { content: ' ↑'; }
+  .standings th[aria-sort='descending'] button::after { content: ' ↓'; }
+  .standings .l { text-align: left; }
+  .standings tbody th { font-weight: 500; }
+  .team { display: flex; align-items: center; gap: 8px; }
+  .strong { font-weight: 600; }
+  .good { color: var(--ok); font-weight: 600; }
+  .bad { color: var(--bad); font-weight: 600; }
+  tr.lib td:first-child { box-shadow: inset 3px 0 0 var(--ok); }
+  tr.rel td:first-child { box-shadow: inset 3px 0 0 var(--bad); }
+  tr.rel { background: color-mix(in srgb, var(--bad-soft) 45%, transparent); }
+  .form { display: flex; gap: 3px; justify-content: flex-end; }
+  .dot {
+    display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 4px;
+    font-size: 0.68rem; font-weight: 600; color: #fff;
+  }
+  .dot.V { background: var(--ok); }
+  .dot.E { background: var(--bar-muted); color: var(--fg); }
+  .dot.D { background: var(--bad); }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 12px 0 0; color: var(--muted); font-size: 0.8rem; }
+  .lg::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
+  .lg.lib::before { background: var(--ok); }
+  .lg.rel::before { background: var(--bad); }
+  @media (max-width: 720px) {
+    .opt { display: none; }
+    .standings th, .standings td { padding: 7px 6px; }
+  }
+</style>

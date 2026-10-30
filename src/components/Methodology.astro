@@ -1,0 +1,28 @@
+---
+import type { Snapshot } from '../lib/types';
+
+interface Props { snap: Snapshot }
+const { snap } = Astro.props;
+const nf = (v: number) => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+---
+
+<section class="card method" aria-labelledby="method-title">
+  <h2 id="method-title">Como as chances são calculadas</h2>
+  <p>
+    Cada jogo restante é simulado {snap.n_sims.toLocaleString('pt-BR')} vezes com um modelo de gols de Poisson.
+    A média de gols da liga é {nf(snap.model.mu_home)} para o mandante e {nf(snap.model.mu_away)} para o visitante,
+    ajustada pela força de ataque e de defesa de cada time, estimada a partir de todos os jogos da temporada.
+    Jogos recentes pesam mais: o peso cai pela metade a cada {snap.model.half_life_matchdays} rodadas.
+  </p>
+  <p>
+    Em cada simulação a tabela final é montada com os critérios pontos, vitórias, saldo e gols pró.
+    A chance de cada clube é a fração de simulações em que ele termina em cada faixa.
+    O modelo não considera desfalques, mudanças de técnico nem a motivação de quem já não disputa nada.
+  </p>
+  <p>Dados das partidas: <a href="https://www.football-data.org/" rel="noopener">football-data.org</a>.</p>
+</section>
+
+<style>
+  .method p { margin: 0 0 10px; color: var(--muted); font-size: 0.88rem; max-width: 80ch; }
+  .method p:last-child { margin-bottom: 0; }
+</style>
