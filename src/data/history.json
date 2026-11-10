@@ -22,22 +22,22 @@
  },
  {
   "rodada": 34,
-  "at": "2026-11-10T04:10:19+00:00",
+  "at": "2026-11-10T12:44:10+00:00",
   "sample": false,
   "title": {
-   "Flamengo": 0.84065,
-   "Palmeiras": 0.15935
+   "Flamengo": 0.83505,
+   "Palmeiras": 0.16495
   },
   "rel": {
-   "Botafogo": 0.0206,
-   "Coritiba": 0.05475,
-   "Vasco da Gama": 0.01385,
-   "Mirassol": 0.14165,
-   "Vitória": 0.478,
-   "Internacional": 0.33875,
-   "Corinthians": 0.41715,
-   "Grêmio": 0.53555,
-   "Remo": 0.9996,
+   "Botafogo": 0.01945,
+   "Coritiba": 0.0603,
+   "Vasco da Gama": 0.01415,
+   "Mirassol": 0.1429,
+   "Vitória": 0.47225,
+   "Internacional": 0.339,
+   "Corinthians": 0.42295,
+   "Grêmio": 0.53005,
+   "Remo": 0.99895,
    "Chapecoense": 1.0
   }
  }
