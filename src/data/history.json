@@ -63,17 +63,17 @@
  },
  {
   "rodada": 36,
-  "at": "2026-11-24T02:56:04+00:00",
+  "at": "2026-11-24T14:56:41+00:00",
   "sample": false,
   "title": {
    "Flamengo": 1.0
   },
   "rel": {
-   "Botafogo": 0.0899,
-   "Grêmio": 0.31905,
-   "Mirassol": 0.4222,
-   "Corinthians": 0.2375,
-   "Internacional": 0.93095,
+   "Botafogo": 0.0857,
+   "Grêmio": 0.3189,
+   "Mirassol": 0.4276,
+   "Corinthians": 0.23575,
+   "Internacional": 0.93185,
    "Remo": 1.0,
    "Chapecoense": 1.0
   }
